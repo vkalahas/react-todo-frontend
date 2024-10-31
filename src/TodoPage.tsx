@@ -11,9 +11,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "./components/ui/input";
 import { Button } from "./components/ui/button";
 import { useState } from "react";
+import axios from "axios";
 
 // API base URL - change this to your production URL when deploying
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+
+// Create axios instance with base configuration
+const api = axios.create({
+    baseURL: API_BASE,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
 
 type Todo = {
     id: number;
@@ -29,28 +38,15 @@ export default function TodoPage() {
     const { data: todos, isLoading, error } = useQuery<Todo[]>({
         queryKey: ["todos"],
         queryFn: async () => {
-            const response = await fetch(`${API_BASE}/api/todos`);
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-            const data = await response.json();
+            const { data } = await api.get('/api/todos');
             return data;
         },
     });
 
     const addTodoMutation = useMutation({
         mutationFn: async (title: string) => {
-            const response = await fetch(`${API_BASE}/api/todos`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ title }),
-            });
-            if (!response.ok) {
-                throw new Error("Failed to add todo");
-            }
-            return response.json();
+            const { data } = await api.post('/api/todos', { title });
+            return data;
         },
         onSuccess: () => {
             setNewTodo(""); // Clear input on success
@@ -60,17 +56,8 @@ export default function TodoPage() {
 
     const toggleTodoMutation = useMutation({
         mutationFn: async ({ id, completed }: { id: number; completed: boolean }) => {
-            const response = await fetch(`${API_BASE}/api/todos/${id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ completed }),
-            });
-            if (!response.ok) {
-                throw new Error("Failed to update todo");
-            }
-            return response.json();
+            const { data } = await api.patch(`/api/todos/${id}`, { completed });
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["todos"] });
@@ -79,13 +66,8 @@ export default function TodoPage() {
 
     const deleteTodoMutation = useMutation({
         mutationFn: async (id: number) => {
-            const response = await fetch(`${API_BASE}/api/todos/${id}`, {
-                method: 'DELETE',
-            });
-            if (!response.ok) {
-                throw new Error("Failed to delete todo");
-            }
-            return response.json();
+            const { data } = await api.delete(`/api/todos/${id}`);
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["todos"] });
