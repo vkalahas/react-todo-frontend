@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../hono-cloudflare-app"
+		}
+	],
+	"settings": {}
+}
